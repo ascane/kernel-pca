@@ -63,7 +63,7 @@ class Kmeans:
                 if dist < dist_min:
                     y[i] = k
                     dist_min = dist
-            count[ y[i] ] += 1
+            count[y[i]] += 1
         print(count)
         return y
 
