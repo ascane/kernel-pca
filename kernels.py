@@ -20,6 +20,14 @@ class Kernel:
                 K[i, j] = self.calc(X[i, :], Y[j, :])
         return K
 
+class PolynomialKernel(Kernel):
+    def __init__(self, degree):
+        self.degree = degree
+        self.name = 'polynomial_%d' % degree
+        
+    def calc(self, x, y):
+        return (1 + numpy.dot(x, y)) ** self.degree
+
 class LinearKernel(Kernel):
     def __init__(self):
         self.name = 'linear'
