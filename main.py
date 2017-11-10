@@ -1,7 +1,7 @@
 import numpy
 from sklearn.datasets import fetch_20newsgroups
 from sklearn.feature_extraction.text import TfidfVectorizer
-from kernels import LinearKernel, GaussianKernel
+from kernels import PolynomialKernel, LinearKernel, GaussianKernel, LaplacianRBFKernel
 from kernel_pca import KernelPCA
 from kmeans import Kmeans
 
@@ -11,14 +11,16 @@ vectorizer = TfidfVectorizer()
 vectors = vectorizer.fit_transform(newsgroups_all.data)
 X = vectors.toarray()
 y = newsgroups_all.target
-X_train = X[0:2000, :]
-X_test = X[2000:, :]
-y_train = y[0:2000]
-y_test = y[2000:]
+# only take 800 for training and 200 for testing
+X_train = X[0:800, :]
+X_test = X[800:1000, :]
+y_train = y[0:800]
+y_test = y[800:1000]
 
-kpca = KernelPCA(GaussianKernel(sigma=1)) # to change
+kernel = GaussianKernel(sigma=1) # to change
+kpca = KernelPCA(kernel)
 kpca.fit(X_train)
-n_components = None # to change
+n_components = 2 # to change
 X_train_proj = kpca.predict(X_train, components=n_components)
 X_test_proj = kpca.predict(X_test, components=n_components)
 
@@ -42,15 +44,16 @@ def apply_permut_to_prediction(y_pred, y, permut):
     accuracy = 1.0 * numpy.sum(numpy.equal(y_pred_new, y)) / len(y)
     return y_pred_new, accuracy
 
-n_iter = 5
+n_iter = 10
 kmeans = Kmeans(nclusters=3)
 accuracy_test_best_best = 0.
+accuracy_train_best_best = 0.
 y_pred_train_best_best = numpy.zeros(y_train.shape)
 y_pred_test_best_best = numpy.zeros(y_test.shape)
 print("Trying different K-means initializations")
 for i in range(0, n_iter):
     print("K-means Iteration%d" % i)
-    kmeans.fit(data=X_train_proj, niter=30)
+    kmeans.fit(data=X_train_proj, niter=50)
     y_pred_train = kmeans.predict(X_train_proj)
     y_pred_test = kmeans.predict(X_test_proj)
     
@@ -61,10 +64,17 @@ for i in range(0, n_iter):
 
     if accuracy_test_best > accuracy_test_best_best:
         accuracy_test_best_best = accuracy_test_best
+        accuracy_train_best_best = accuracy_train_best
         y_pred_train_best_best = y_pred_train_best
         y_pred_test_best_best = y_pred_test_best
 
     print "%.5f" % accuracy_train_best
     print "%.5f" % accuracy_test_best
 
-print "%.5f" % accuracy_test_best_best
+print kernel.name
+if n_components==None:
+    print "all components"
+else:
+    print "number of components: %d" % n_components
+print "Training data classification accuracy: %.5f" % accuracy_train_best_best
+print "Test data classification accuracy: %.5f" % accuracy_test_best_best
